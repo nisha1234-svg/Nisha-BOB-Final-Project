@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:900px">
+  <h2 class="fw-bold mb-1"><i class="bi bi-info-circle text-aq-teal me-2"></i>About AquaGuard AI</h2>
+  <p class="text-muted mb-4">Understanding the system, its purpose, and its limitations.</p>
+
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-globe-americas me-2"></i>Mission &amp; SDG Alignment</div>
+    <div class="card-body">
+      <p>
+        AquaGuard AI is an educational and awareness tool built around
+        <strong>UN Sustainable Development Goal 14: Life Below Water</strong>.
+        It demonstrates how accessible, open-source image-processing techniques
+        can be applied to generate preliminary, experimental risk flags for
+        water body health — helping communities and researchers quickly triage
+        areas that may warrant formal laboratory investigation.
+      </p>
+      <p class="mb-0">
+        It is <strong>not</strong> a certified environmental monitoring instrument.
+        Results must always be validated by certified water-quality testing.
+      </p>
+    </div>
+  </div>
+
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-cpu me-2"></i>Technology Stack</div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-0"><strong>Backend:</strong> Python Flask</li>
+            <li class="list-group-item px-0"><strong>Image Analysis:</strong> OpenCV + NumPy</li>
+            <li class="list-group-item px-0"><strong>Database:</strong> MongoDB Atlas (free tier)</li>
+            <li class="list-group-item px-0"><strong>Maps:</strong> Leaflet.js + OpenStreetMap</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-0"><strong>Charts:</strong> Chart.js</li>
+            <li class="list-group-item px-0"><strong>Frontend:</strong> Bootstrap 5 + Vanilla JS</li>
+            <li class="list-group-item px-0"><strong>Deployment:</strong> Gunicorn + .env config</li>
+            <li class="list-group-item px-0"><strong>License:</strong> MIT (open source)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-shield-exclamation me-2"></i>Important Limitations</div>
+    <div class="card-body">
+      <ul>
+        <li>Analysis is based on <strong>visible-spectrum pixel data only</strong>. Chemical and biological pollutants that do not alter visible colour or texture cannot be detected.</li>
+        <li>Lighting conditions, time of day, weather, and camera quality significantly affect results.</li>
+        <li>The system cannot detect dissolved pollutants, heavy metals, pathogens, or micro-plastics.</li>
+        <li>A "Low" risk result does <strong>not</strong> mean the water is safe.</li>
+        <li>A "High" risk result does <strong>not</strong> confirm actual pollution — always verify with lab testing.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-journal-text me-2"></i>Analysis Methodology</div>
+    <div class="card-body">
+      <p class="mb-2">Four independent sub-analyses are combined into a weighted composite score (0–100):</p>
+      <ol>
+        <li><strong>Colour Anomaly (35%)</strong> – Pixels outside typical blue/blue-green water hues (brownish, red, yellow) raise the score.</li>
+        <li><strong>Turbidity Proxy (25%)</strong> – High brightness variance in the Lab colour space suggests suspended particles.</li>
+        <li><strong>Algae Bloom Indicator (20%)</strong> – Green-channel dominance over blue signals possible algae or eutrophication.</li>
+        <li><strong>Dark Patch Detection (20%)</strong> – Very dark, low-saturation regions may indicate oil sheens or dense matter.</li>
+      </ol>
+      <p class="mb-0">All weights and thresholds are explicitly documented in <code>analyzer.py</code>.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

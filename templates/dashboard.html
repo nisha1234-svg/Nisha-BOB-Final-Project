@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-bar-chart-line text-aq-teal me-2"></i>Analytics Dashboard</h2>
+      <p class="text-muted mb-0">Overview of all water pollution risk analyses performed.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn aq-btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>New Analysis
+    </a>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4" id="kpiRow">
+    <div class="col-6 col-lg-3">
+      <div class="card aq-kpi-card">
+        <div class="card-body">
+          <div class="aq-kpi-icon text-aq-teal"><i class="bi bi-search"></i></div>
+          <div class="aq-kpi-value" id="kpiTotal">—</div>
+          <div class="aq-kpi-label">Total Analyses</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card aq-kpi-card aq-kpi-danger">
+        <div class="card-body">
+          <div class="aq-kpi-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="aq-kpi-value" id="kpiHigh">—</div>
+          <div class="aq-kpi-label">High Risk</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card aq-kpi-card aq-kpi-warning">
+        <div class="card-body">
+          <div class="aq-kpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+          <div class="aq-kpi-value" id="kpiAvg">—</div>
+          <div class="aq-kpi-label">Avg Risk Score</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card aq-kpi-card aq-kpi-success">
+        <div class="card-body">
+          <div class="aq-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="aq-kpi-value" id="kpiLow">—</div>
+          <div class="aq-kpi-label">Low Risk</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1 -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header">
+          <i class="bi bi-pie-chart me-2"></i>Risk Level Distribution
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <div style="max-width:300px; width:100%;">
+            <canvas id="riskPieChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header">
+          <i class="bi bi-water me-2"></i>Water Body Type Distribution
+        </div>
+        <div class="card-body d-flex align-items-center justify-content-center">
+          <div style="max-width:300px; width:100%;">
+            <canvas id="typeDonutChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 2 -->
+  <div class="row g-4 mb-4">
+    <div class="col-12">
+      <div class="card aq-card">
+        <div class="card-header aq-card-header">
+          <i class="bi bi-graph-up me-2"></i>Average Risk Score Over Time (last 30 days)
+        </div>
+        <div class="card-body">
+          <canvas id="trendLineChart" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Analyses -->
+  <div class="card aq-card">
+    <div class="card-header aq-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-clock-history me-2"></i>Recent Analyses</span>
+      <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-light">View All</a>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover aq-table mb-0" id="recentTable">
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Risk</th>
+              <th>Score</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="recentTableBody">
+            <tr><td colspan="6" class="text-center text-muted py-4">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

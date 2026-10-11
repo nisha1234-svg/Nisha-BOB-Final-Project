@@ -1,0 +1,515 @@
+/* ============================================================
+   AquaGuard AI – Premium Ocean-Blue Dashboard Stylesheet
+   ============================================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+  --aq-blue:        #0a5491;
+  --aq-blue-dark:   #072e54;
+  --aq-blue-mid:    #1471b8;
+  --aq-teal:        #0db0a8;
+  --aq-teal-light:  #e0faf8;
+  --aq-teal-mid:    #7fd9d5;
+  --aq-ocean:       #0c4a6e;
+  --aq-bg:          #eef5fb;
+  --aq-card-bg:     #ffffff;
+  --aq-border:      #cde4f3;
+  --aq-border-dark: #a8c9e0;
+  --aq-text:        #0c1929;
+  --aq-muted:       #516a80;
+  --aq-low:         #16a34a;
+  --aq-medium:      #d97706;
+  --aq-high:        #dc2626;
+  --aq-navbar-h:    62px;
+  --aq-sdg-h:       34px;
+  --aq-radius:      .65rem;
+  --aq-shadow-sm:   0 1px 4px rgba(10,84,145,.08);
+  --aq-shadow:      0 3px 14px rgba(10,84,145,.11);
+  --aq-shadow-lg:   0 8px 28px rgba(10,84,145,.15);
+}
+
+/* ---------- Global ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(ellipse at 70% 0%, #ddeeff 0%, var(--aq-bg) 55%);
+  background-attachment: fixed;
+  color: var(--aq-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.aq-main {
+  flex: 1;
+}
+
+a {
+  color: var(--aq-teal);
+  text-decoration: none;
+}
+a:hover { color: var(--aq-blue); text-decoration: underline; }
+
+/* ---------- Navbar ---------- */
+.aq-navbar {
+  background: linear-gradient(120deg, var(--aq-blue-dark) 0%, var(--aq-blue) 50%, #0d7a8a 100%);
+  height: var(--aq-navbar-h);
+  border-bottom: 2.5px solid var(--aq-teal);
+  box-shadow: 0 2px 18px rgba(10,84,145,.30);
+}
+
+.aq-logo-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem;
+}
+
+.text-aq-teal { color: var(--aq-teal) !important; }
+
+.aq-navbar .nav-link {
+  font-size: .88rem;
+  font-weight: 500;
+  border-radius: .45rem;
+  padding: .38rem .75rem;
+  transition: background .15s, color .15s;
+  letter-spacing: .01em;
+}
+.aq-navbar .nav-link:hover,
+.aq-navbar .nav-link.active {
+  background: rgba(255,255,255,0.18);
+  color: #fff !important;
+}
+
+/* ---------- SDG Bar ---------- */
+.aq-sdg-bar {
+  background: linear-gradient(90deg, var(--aq-teal) 0%, var(--aq-blue-mid) 50%, var(--aq-blue) 100%);
+  color: #fff;
+  font-size: .78rem;
+  text-align: center;
+  padding: .38rem 1rem;
+  letter-spacing: .025em;
+}
+
+/* ---------- Cards ---------- */
+.aq-card {
+  border: 1px solid var(--aq-border);
+  border-radius: var(--aq-radius);
+  background: var(--aq-card-bg);
+  box-shadow: var(--aq-shadow-sm);
+  transition: box-shadow .2s;
+}
+.aq-card:hover { box-shadow: var(--aq-shadow); }
+
+.aq-card-header {
+  background: linear-gradient(90deg, var(--aq-blue) 0%, var(--aq-blue-mid) 60%, #0e8a96 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: .92rem;
+  padding: .7rem 1.1rem;
+  border-radius: var(--aq-radius) var(--aq-radius) 0 0 !important;
+  border: none;
+  letter-spacing: .015em;
+}
+
+/* ---------- Hero Card ---------- */
+.aq-hero-card {
+  background: linear-gradient(135deg, #dff0ff 0%, #d6faf7 60%, #e6f3ff 100%);
+  border: 1px solid var(--aq-border);
+  border-radius: .85rem;
+  padding: 2.2rem;
+  box-shadow: var(--aq-shadow);
+}
+
+.aq-hero-icon {
+  font-size: 6rem;
+  color: var(--aq-teal);
+  opacity: 0.35;
+  line-height: 1;
+}
+
+/* ---------- Disclaimer Banner ---------- */
+.aq-disclaimer-banner {
+  background: rgba(14,165,160,0.1);
+  border-left: 3px solid var(--aq-teal);
+  color: var(--aq-text);
+}
+
+.aq-disclaimer-alert {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: .5rem;
+  color: #78350f;
+}
+
+/* ---------- Drop Zone ---------- */
+.aq-drop-zone {
+  border: 2.5px dashed var(--aq-teal);
+  border-radius: .6rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--aq-teal-light);
+  transition: background .2s, border-color .2s;
+}
+.aq-drop-zone:hover,
+.aq-drop-zone.drag-over {
+  background: var(--aq-teal-mid);
+  border-color: var(--aq-blue);
+}
+
+.aq-preview-img {
+  max-height: 220px;
+  width: 100%;
+  object-fit: cover;
+}
+
+/* ---------- Tabs ---------- */
+.aq-tab {
+  color: var(--aq-blue) !important;
+  border: 1px solid var(--aq-border);
+  font-size: 0.88rem;
+}
+.aq-tab.active {
+  background: var(--aq-blue) !important;
+  color: #fff !important;
+  border-color: var(--aq-blue) !important;
+}
+
+/* ---------- Buttons ---------- */
+.aq-btn-primary {
+  background: linear-gradient(90deg, var(--aq-blue) 0%, var(--aq-teal) 100%);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: .5rem;
+  transition: opacity .15s, transform .1s;
+}
+.aq-btn-primary:hover {
+  opacity: .9; color: #fff; transform: translateY(-1px);
+}
+.aq-btn-primary:disabled {
+  opacity: .55; transform: none;
+}
+
+.aq-btn-secondary {
+  background: var(--aq-teal);
+  color: #fff;
+  border: none;
+  font-weight: 500;
+  border-radius: .5rem;
+}
+.aq-btn-secondary:hover { background: var(--aq-blue); color: #fff; }
+
+/* ---------- Risk Badges ---------- */
+.aq-risk-badge {
+  width: 52px; height: 52px;
+  border-radius: .5rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+}
+.aq-risk-badge-lg {
+  width: 70px; height: 70px;
+  border-radius: .6rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+}
+
+.aq-risk-low    { background: #dcfce7; color: var(--aq-low); }
+.aq-risk-medium { background: #fef3c7; color: var(--aq-medium); }
+.aq-risk-high   { background: #fee2e2; color: var(--aq-high); }
+
+/* ---------- Progress Bars ---------- */
+.aq-progress    { height: 10px; border-radius: 5px; background: #e2e8f0; }
+.aq-progress-sm { height: 8px;  border-radius: 4px; background: #e2e8f0; }
+.aq-progress-bar { background: linear-gradient(90deg, var(--aq-blue), var(--aq-teal)); }
+
+.aq-bar-color     { background: linear-gradient(90deg, #7c3aed, #a855f7) !important; }
+.aq-bar-turbidity { background: linear-gradient(90deg, #0369a1, #38bdf8) !important; }
+.aq-bar-algae     { background: linear-gradient(90deg, #15803d, #4ade80) !important; }
+.aq-bar-dark      { background: linear-gradient(90deg, #374151, #6b7280) !important; }
+
+/* ---------- Colour Swatches ---------- */
+.aq-swatch-box {
+  width: 52px; height: 52px;
+  border-radius: .4rem;
+  border: 1px solid rgba(0,0,0,0.15);
+  display: block;
+}
+
+/* ---------- Confidence Badge ---------- */
+.aq-badge-confidence {
+  background: var(--aq-blue);
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+/* ---------- KPI Cards ---------- */
+.aq-kpi-card {
+  border: 1px solid var(--aq-border);
+  border-radius: .6rem;
+  background: var(--aq-card-bg);
+  text-align: center;
+  padding: 1.25rem 1rem;
+  transition: box-shadow .2s;
+}
+.aq-kpi-card:hover {
+  box-shadow: 0 4px 16px rgba(13,94,158,0.12);
+}
+
+.aq-kpi-icon {
+  font-size: 1.8rem;
+  color: var(--aq-blue);
+  margin-bottom: .4rem;
+}
+.aq-kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--aq-blue);
+  line-height: 1;
+}
+.aq-kpi-label {
+  font-size: 0.8rem;
+  color: var(--aq-muted);
+  margin-top: .25rem;
+}
+
+.aq-kpi-danger .aq-kpi-icon,
+.aq-kpi-danger .aq-kpi-value { color: var(--aq-high); }
+.aq-kpi-warning .aq-kpi-icon,
+.aq-kpi-warning .aq-kpi-value { color: var(--aq-medium); }
+.aq-kpi-success .aq-kpi-icon,
+.aq-kpi-success .aq-kpi-value { color: var(--aq-low); }
+
+/* ---------- Table ---------- */
+.aq-table { font-size: 0.88rem; }
+.aq-table thead th {
+  background: var(--aq-bg);
+  color: var(--aq-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: .04em;
+  border-bottom: 2px solid var(--aq-border);
+}
+.aq-table tbody tr:hover {
+  background: var(--aq-teal-light);
+}
+
+/* ---------- History Cards ---------- */
+.aq-history-card {
+  border: 1px solid var(--aq-border);
+  border-radius: .6rem;
+  background: var(--aq-card-bg);
+  transition: box-shadow .2s, transform .15s;
+  overflow: hidden;
+}
+.aq-history-card:hover {
+  box-shadow: 0 4px 16px rgba(13,94,158,0.12);
+  transform: translateY(-2px);
+}
+.aq-history-thumb {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-bottom: 1px solid var(--aq-border);
+}
+.aq-history-thumb-placeholder {
+  width: 100%;
+  height: 130px;
+  background: linear-gradient(135deg, var(--aq-teal-light) 0%, #e8f4ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: var(--aq-teal);
+  border-bottom: 1px solid var(--aq-border);
+}
+
+.aq-risk-pill-low    { background: #dcfce7; color: #166534; font-size:.78rem; border-radius:20px; padding:.2rem .7rem; font-weight:600; }
+.aq-risk-pill-medium { background: #fef3c7; color: #78350f; font-size:.78rem; border-radius:20px; padding:.2rem .7rem; font-weight:600; }
+.aq-risk-pill-high   { background: #fee2e2; color: #7f1d1d; font-size:.78rem; border-radius:20px; padding:.2rem .7rem; font-weight:600; }
+
+/* ---------- Sample Grid ---------- */
+.aq-sample-card {
+  border: 2px solid var(--aq-border);
+  border-radius: .5rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.aq-sample-card:hover {
+  border-color: var(--aq-teal);
+  box-shadow: 0 2px 8px rgba(14,165,160,0.2);
+}
+.aq-sample-card.selected {
+  border-color: var(--aq-blue);
+  box-shadow: 0 0 0 3px rgba(13,94,158,0.2);
+}
+.aq-sample-card img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+}
+
+/* ---------- Methodology Cards ---------- */
+.aq-method-card {
+  border: 1px solid var(--aq-border);
+  border-radius: .6rem;
+  padding: 1rem;
+  background: var(--aq-teal-light);
+  height: 100%;
+  transition: box-shadow .2s;
+}
+.aq-method-card:hover {
+  box-shadow: 0 4px 12px rgba(14,165,160,0.15);
+}
+
+.aq-method-icon {
+  font-size: 1.6rem;
+  color: var(--aq-teal);
+}
+
+/* ---------- Map Legend ---------- */
+.aq-map-legend {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.2);
+}
+.aq-legend-low    { background: var(--aq-low); }
+.aq-legend-medium { background: var(--aq-medium); }
+.aq-legend-high   { background: var(--aq-high); }
+
+/* ---------- Footer ---------- */
+.aq-footer {
+  background: linear-gradient(135deg, var(--aq-blue-dark) 0%, var(--aq-ocean) 50%, var(--aq-blue) 100%);
+  color: rgba(255,255,255,.88);
+  margin-top: 3rem;
+}
+.aq-footer h6 { color: #fff; }
+.aq-footer-link {
+  color: var(--aq-teal-mid);
+  display: block;
+  line-height: 1.85;
+  transition: color .15s;
+}
+.aq-footer-link:hover { color: #fff; text-decoration: none; }
+
+/* ---------- Satellite Explorer specific ---------- */
+.sat-step-badge {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--aq-blue); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700; flex-shrink: 0;
+}
+
+/* ---------- KPI card hover glow ---------- */
+.aq-kpi-card:hover {
+  box-shadow: var(--aq-shadow-lg);
+  transform: translateY(-2px);
+}
+.aq-kpi-card { transition: box-shadow .2s, transform .15s; }
+
+/* ---------- Map Click Analysis Panel ---------- */
+.aq-click-panel {
+  border: 1.5px solid var(--aq-teal);
+  border-radius: .65rem;
+  background: var(--aq-card-bg);
+  box-shadow: var(--aq-shadow);
+}
+
+/* ---------- River Rankings ---------- */
+.aq-river-card {
+  border: 1px solid var(--aq-border);
+  border-radius: .55rem;
+  background: var(--aq-card-bg);
+  transition: box-shadow .18s, transform .14s;
+  cursor: pointer;
+}
+.aq-river-card:hover {
+  box-shadow: 0 4px 18px rgba(10,84,145,.13);
+  transform: translateY(-2px);
+}
+
+.aq-rank-badge {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1rem; flex-shrink: 0;
+}
+.aq-rank-polluted { background: #fee2e2; color: #7f1d1d; }
+.aq-rank-clean    { background: #dcfce7; color: #14532d; }
+
+.aq-score-bar-wrap { height: 8px; border-radius: 4px; background: #e2e8f0; }
+.aq-score-bar { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.aq-score-polluted { background: linear-gradient(90deg, #ef4444, #f97316); }
+.aq-score-clean    { background: linear-gradient(90deg, #22c55e, #0ea5e9); }
+
+/* ---------- WQI Pill ---------- */
+.aq-wqi-pill {
+  display: inline-block;
+  font-size: .72rem; font-weight: 700;
+  padding: .15rem .6rem; border-radius: 20px;
+}
+.aq-wqi-extreme { background:#fee2e2; color:#7f1d1d; }
+.aq-wqi-high    { background:#ffedd5; color:#7c2d12; }
+.aq-wqi-medium  { background:#fef3c7; color:#78350f; }
+.aq-wqi-good    { background:#dcfce7; color:#14532d; }
+.aq-wqi-exc     { background:#d1fae5; color:#064e3b; }
+
+/* ---------- Disease Items ---------- */
+.aq-disease-item {
+  border-left: 3px solid;
+  padding-left: .75rem;
+  margin-bottom: .7rem;
+}
+.aq-disease-high   { border-color: #ef4444; }
+.aq-disease-medium { border-color: #f59e0b; }
+.aq-disease-low    { border-color: #22c55e; }
+
+/* ---------- Source Chips ---------- */
+.aq-source-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--aq-teal-light); border: 1px solid var(--aq-teal);
+  border-radius: 20px; font-size: .72rem; padding: .2rem .65rem;
+  color: var(--aq-blue); text-decoration: none;
+  transition: background .15s;
+}
+.aq-source-chip:hover { background: var(--aq-teal-mid); color: #fff; }
+
+/* ---------- Sample Image Notice ---------- */
+.aq-sample-notice {
+  background: #fffbeb; border: 1px solid #f59e0b;
+  border-radius: .4rem; font-size: .8rem; color: #78350f;
+  padding: .45rem .7rem;
+}
+
+/* ---------- Tab System (map panel) ---------- */
+.aq-tab-section { border-bottom: 2px solid var(--aq-border); }
+.aq-tab-btn {
+  padding: .45rem 1.1rem; border: none; background: none;
+  font-weight: 600; font-size: .88rem; color: var(--aq-muted);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  cursor: pointer; transition: color .15s, border-color .15s;
+}
+.aq-tab-btn.active { color: var(--aq-blue); border-bottom-color: var(--aq-blue); }
+.aq-tab-pane { display: none; }
+.aq-tab-pane.active { display: block; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 576px) {
+  .aq-hero-card { padding: 1.25rem; }
+  .aq-kpi-value { font-size: 1.5rem; }
+  .aq-card-header { font-size: .82rem; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  .aq-navbar, .aq-sdg-bar, .aq-footer, .btn, nav { display: none !important; }
+  .aq-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+  body { background: #fff !important; }
+}

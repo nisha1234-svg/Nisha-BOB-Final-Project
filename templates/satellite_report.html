@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Satellite Analysis Report{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:960px">
+
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+      <a href="{{ url_for('satellite') }}" class="btn btn-sm btn-outline-secondary mb-2">
+        <i class="bi bi-arrow-left me-1"></i>Back to Explorer
+      </a>
+      <h2 class="fw-bold mb-1">
+        <i class="bi bi-satellite text-aq-teal me-2"></i>Satellite Analysis Report
+      </h2>
+      <p class="text-muted mb-0">
+        {{ record.location_name }}
+        &bull; {{ record.water_type.replace('_',' ').title() if record.water_type else 'Water Body' }}
+        {% if record.image_date %}&bull; {{ record.image_date }}{% endif %}
+        &bull; {{ record.analyzed_at[:10] if record.analyzed_at else 'Unknown date' }}
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-printer me-1"></i>Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="alert alert-warning small mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Experimental Estimate Only.</strong>
+    {% if record.disclaimer %}{{ record.disclaimer }}{% else %}
+    This analysis is based solely on image pixel data and does NOT confirm actual water pollution
+    or chemical contamination. Consult certified environmental agencies for authoritative results.
+    {% endif %}
+  </div>
+
+  <!-- Risk Summary -->
+  <div class="card aq-card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-auto">
+          {% if record.risk_level == 'Low' %}
+            <div class="aq-risk-badge-lg aq-risk-low"><i class="bi bi-check-circle-fill"></i></div>
+          {% elif record.risk_level == 'Medium' %}
+            <div class="aq-risk-badge-lg aq-risk-medium"><i class="bi bi-exclamation-circle-fill"></i></div>
+          {% else %}
+            <div class="aq-risk-badge-lg aq-risk-high"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          {% endif %}
+        </div>
+        <div class="col">
+          <h3 class="fw-bold mb-1">{{ record.risk_level }} Visual Risk</h3>
+          <p class="text-muted mb-0">
+            Composite Score: <strong class="fs-5">{{ record.risk_score }}/100</strong>
+            &bull; Confidence: <span class="badge aq-badge-confidence">{{ record.confidence }}</span>
+          </p>
+        </div>
+        {% if record.image_url %}
+        <div class="col-md-auto">
+          <img src="{{ record.image_url }}" alt="Analysed image"
+            class="img-thumbnail" style="max-height:100px;max-width:130px;object-fit:cover;" />
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Row -->
+  <div class="row g-4 mb-4">
+
+    <!-- Location Info -->
+    <div class="col-md-5">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header"><i class="bi bi-geo-alt me-2"></i>Location Details</div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-5">Location</dt>
+            <dd class="col-sm-7">{{ record.location_name or '—' }}</dd>
+            <dt class="col-sm-5">Water Type</dt>
+            <dd class="col-sm-7">{{ record.water_type.replace('_',' ').title() if record.water_type else '—' }}</dd>
+            {% if record.latitude %}
+            <dt class="col-sm-5">Latitude</dt>
+            <dd class="col-sm-7">{{ record.latitude }}</dd>
+            {% endif %}
+            {% if record.longitude %}
+            <dt class="col-sm-5">Longitude</dt>
+            <dd class="col-sm-7">{{ record.longitude }}</dd>
+            {% endif %}
+            {% if record.image_date %}
+            <dt class="col-sm-5">Image Date</dt>
+            <dd class="col-sm-7">{{ record.image_date }}</dd>
+            {% endif %}
+            <dt class="col-sm-5">Analysed At</dt>
+            <dd class="col-sm-7">{{ record.analyzed_at[:19].replace('T',' ') if record.analyzed_at else '—' }}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Breakdown -->
+    <div class="col-md-7">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header"><i class="bi bi-bar-chart me-2"></i>Score Breakdown</div>
+        <div class="card-body">
+          {% set scores = [
+            ('Colour Anomaly', record.color_score, 'aq-bar-color'),
+            ('Turbidity Proxy', record.turbidity_score, 'aq-bar-turbidity'),
+            ('Algae Bloom Indicators', record.algae_score, 'aq-bar-algae'),
+            ('Dark Patch Detection', record.dark_patch_score, 'aq-bar-dark'),
+          ] %}
+          {% for label, score, bar_class in scores %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>{{ label }}</span>
+              <strong>{{ score }}/100</strong>
+            </div>
+            <div class="progress aq-progress-sm">
+              <div class="progress-bar {{ bar_class }}" style="width:{{ score }}%"></div>
+            </div>
+          </div>
+          {% endfor %}
+          <hr />
+          <div class="d-flex justify-content-between align-items-center">
+            <strong>Composite Score</strong>
+            <span class="fs-5 fw-bold">{{ record.risk_score }}/100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Regions -->
+  {% if record.detected_regions %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-layers me-2"></i>Detected Suspicious Regions</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm aq-table mb-0">
+          <thead>
+            <tr>
+              <th>Region Type</th>
+              <th>Indicator Colour</th>
+              <th>Bounding Box (x, y, w, h)</th>
+              <th>Area (px)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in record.detected_regions %}
+            <tr>
+              <td>{{ r.label }}</td>
+              <td>
+                <span style="display:inline-block;width:14px;height:14px;border-radius:3px;
+                  background:{{ r.color }};vertical-align:middle;border:1px solid #ccc;"></span>
+                <code class="small ms-1">{{ r.color }}</code>
+              </td>
+              <td class="small">{{ r.bbox.x }}, {{ r.bbox.y }}, {{ r.bbox.w }}, {{ r.bbox.h }}</td>
+              <td>{{ r.pixel_count }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Satellite Links -->
+  {% if record.satellite_links %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-satellite me-2"></i>Satellite Resource Links</div>
+    <div class="card-body">
+      <div class="alert alert-info small border-0 mb-3" style="background:rgba(14,165,160,.08);border-left:3px solid var(--aq-teal)!important;">
+        <i class="bi bi-info-circle me-1"></i>
+        These links open free external services. No imagery was retrieved or stored by AquaGuard AI.
+      </div>
+      <div class="row g-2">
+        {% for link in record.satellite_links %}
+        <div class="col-md-6">
+          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+            class="d-block border rounded p-2 text-decoration-none"
+            style="background:#f8fbff;transition:border-color .15s;"
+            onmouseover="this.style.borderColor='#0ea5a0'" onmouseout="this.style.borderColor=''">
+            <div class="d-flex align-items-start gap-2">
+              <i class="bi {{ link.icon }} text-aq-teal mt-1"></i>
+              <div>
+                <div class="fw-semibold small">{{ link.name }}
+                  {% if link.requires_auth %}
+                  <span class="badge bg-warning text-dark ms-1" style="font-size:.65rem;">Login required</span>
+                  {% else %}
+                  <span class="badge bg-success ms-1" style="font-size:.65rem;">No login</span>
+                  {% endif %}
+                </div>
+                <div class="text-muted" style="font-size:.75rem;">{{ link.description }}</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Interpretation -->
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-lightbulb me-2"></i>Interpretation</div>
+    <div class="card-body">
+      <p>{{ record.explanation }}</p>
+      {% if record.source_note %}
+      <div class="alert alert-secondary small border-0">{{ record.source_note }}</div>
+      {% endif %}
+      {% if record.recommendations %}
+      <h6 class="fw-bold mt-3">Recommendations</h6>
+      <ul class="mb-0">
+        {% for rec in record.recommendations %}
+        <li>{{ rec }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Dominant Colours -->
+  {% if record.dominant_colors %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-palette me-2"></i>Dominant Colours</div>
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2">
+        {% for c in record.dominant_colors %}
+        <div class="text-center small">
+          <div class="aq-swatch-box" style="background:{{ c.hex }};"
+            title="RGB({{ c.rgb[0] }},{{ c.rgb[1] }},{{ c.rgb[2] }})"></div>
+          <div class="mt-1">{{ c.percent }}%</div>
+          <div class="text-muted" style="font-size:.7rem;">{{ c.hex }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Map -->
+  {% if record.latitude and record.longitude %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-map me-2"></i>Location Map</div>
+    <div id="reportMap" style="height:280px; border-radius:0 0 .5rem .5rem;"></div>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('satellite') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Explorer
+    </a>
+    <a href="{{ url_for('satellite') }}" class="btn aq-btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>New Analysis
+    </a>
+    <button onclick="window.print()" class="btn btn-outline-secondary">
+      <i class="bi bi-printer me-1"></i>Print Report
+    </button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if record.latitude and record.longitude %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var lat = {{ record.latitude }};
+    var lng = {{ record.longitude }};
+    var risk = '{{ record.risk_level }}';
+    var colors = { Low: '#22c55e', Medium: '#f59e0b', High: '#ef4444' };
+    var map = L.map('reportMap').setView([lat, lng], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    L.circleMarker([lat, lng], {
+      radius: 12, color: colors[risk] || '#3b82d4',
+      fillColor: colors[risk] || '#3b82d4', fillOpacity: 0.8, weight: 2
+    }).addTo(map)
+    .bindPopup('<b>{{ record.location_name }}</b><br>Visual Risk: <b>' + risk + '</b>').openPopup();
+  });
+</script>
+{% endif %}
+{% endblock %}

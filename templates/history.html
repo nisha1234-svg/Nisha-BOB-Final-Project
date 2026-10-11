@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Analysis History{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-clock-history text-aq-teal me-2"></i>Analysis History</h2>
+      <p class="text-muted mb-0">All previously analysed water body images.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn aq-btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>New Analysis
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="card aq-card mb-4">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-center">
+        <div class="col-md-3">
+          <input type="text" class="form-control form-control-sm" id="filterSearch"
+            placeholder="Search location…" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" id="filterRisk">
+            <option value="">All Risk Levels</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select form-select-sm" id="filterType">
+            <option value="">All Water Types</option>
+            <option value="ocean">Ocean / Sea</option>
+            <option value="river">River / Stream</option>
+            <option value="lake">Lake / Pond</option>
+            <option value="reservoir">Reservoir</option>
+            <option value="wetland">Wetland</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="col-md-auto">
+          <button class="btn btn-sm btn-outline-secondary" id="clearFilters">
+            <i class="bi bi-x-circle me-1"></i>Clear
+          </button>
+        </div>
+        <div class="col-md-auto ms-auto">
+          <span class="small text-muted" id="recordCount"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid View -->
+  <div class="row g-3" id="historyGrid">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-aq-teal" role="status"></div>
+      <p class="text-muted mt-2">Loading analyses…</p>
+    </div>
+  </div>
+
+  <div id="noResults" class="text-center py-5 d-none">
+    <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
+    <h5 class="text-muted">No analyses found</h5>
+    <p class="text-muted small">Try adjusting your filters or <a href="{{ url_for('index') }}">add a new analysis</a>.</p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}

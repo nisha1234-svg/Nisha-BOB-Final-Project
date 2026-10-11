@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}Analysis Report{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:900px">
+
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+      <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-secondary mb-2">
+        <i class="bi bi-arrow-left me-1"></i>Back to History
+      </a>
+      <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-text text-aq-teal me-2"></i>Analysis Report</h2>
+      <p class="text-muted mb-0">
+        {{ record.location_name }} &bull;
+        {{ record.water_type.replace('_',' ').title() }} &bull;
+        {{ record.analyzed_at[:10] if record.analyzed_at else 'Unknown date' }}
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-printer me-1"></i>Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Disclaimer Banner -->
+  <div class="alert alert-warning small mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Experimental Estimate Only.</strong>
+    {{ record.disclaimer }}
+  </div>
+
+  <!-- Risk Summary Card -->
+  <div class="card aq-card mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-center">
+        <div class="col-auto">
+          {% if record.risk_level == 'Low' %}
+            <div class="aq-risk-badge-lg aq-risk-low"><i class="bi bi-check-circle-fill"></i></div>
+          {% elif record.risk_level == 'Medium' %}
+            <div class="aq-risk-badge-lg aq-risk-medium"><i class="bi bi-exclamation-circle-fill"></i></div>
+          {% else %}
+            <div class="aq-risk-badge-lg aq-risk-high"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          {% endif %}
+        </div>
+        <div class="col">
+          <h3 class="fw-bold mb-1">{{ record.risk_level }} Risk</h3>
+          <p class="text-muted mb-0">
+            Composite Risk Score: <strong class="fs-5">{{ record.risk_score }}/100</strong>
+            &bull; Confidence: <span class="badge aq-badge-confidence">{{ record.confidence }}</span>
+          </p>
+        </div>
+        {% if record.image_url %}
+        <div class="col-md-auto">
+          <img src="{{ record.image_url }}" alt="Analysed image"
+            class="img-thumbnail" style="max-height:120px;max-width:160px;object-fit:cover;" />
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Details Row -->
+  <div class="row g-4 mb-4">
+    <!-- Location Info -->
+    <div class="col-md-5">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header"><i class="bi bi-geo-alt me-2"></i>Location Details</div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-5">Location</dt>
+            <dd class="col-sm-7">{{ record.location_name }}</dd>
+            <dt class="col-sm-5">Water Type</dt>
+            <dd class="col-sm-7">{{ record.water_type.replace('_',' ').title() }}</dd>
+            {% if record.latitude %}
+            <dt class="col-sm-5">Latitude</dt>
+            <dd class="col-sm-7">{{ record.latitude }}</dd>
+            {% endif %}
+            {% if record.longitude %}
+            <dt class="col-sm-5">Longitude</dt>
+            <dd class="col-sm-7">{{ record.longitude }}</dd>
+            {% endif %}
+            <dt class="col-sm-5">Analysed At</dt>
+            <dd class="col-sm-7">{{ record.analyzed_at[:19].replace('T',' ') if record.analyzed_at else '—' }}</dd>
+            {% if record.demo_mode %}
+            <dt class="col-sm-5">Mode</dt>
+            <dd class="col-sm-7"><span class="badge bg-info">Demo</span></dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score Breakdown -->
+    <div class="col-md-7">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header"><i class="bi bi-bar-chart me-2"></i>Score Breakdown</div>
+        <div class="card-body">
+          {% set scores = [
+            ('Colour Anomaly', record.color_score, 'aq-bar-color'),
+            ('Turbidity Proxy', record.turbidity_score, 'aq-bar-turbidity'),
+            ('Algae Bloom Indicators', record.algae_score, 'aq-bar-algae'),
+            ('Dark Patch Detection', record.dark_patch_score, 'aq-bar-dark'),
+          ] %}
+          {% for label, score, bar_class in scores %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>{{ label }}</span>
+              <strong>{{ score }}/100</strong>
+            </div>
+            <div class="progress aq-progress-sm">
+              <div class="progress-bar {{ bar_class }}" style="width:{{ score }}%"></div>
+            </div>
+          </div>
+          {% endfor %}
+          <hr />
+          <div class="d-flex justify-content-between align-items-center">
+            <strong>Composite Score</strong>
+            <span class="fs-5 fw-bold">{{ record.risk_score }}/100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interpretation -->
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-lightbulb me-2"></i>Interpretation</div>
+    <div class="card-body">
+      <p>{{ record.explanation }}</p>
+      {% if record.recommendations %}
+      <h6 class="fw-bold mt-3">Recommendations</h6>
+      <ul class="mb-0">
+        {% for rec in record.recommendations %}
+        <li>{{ rec }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Dominant Colours -->
+  {% if record.dominant_colors %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-palette me-2"></i>Dominant Colours</div>
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2">
+        {% for c in record.dominant_colors %}
+        <div class="text-center small">
+          <div class="aq-swatch-box" style="background:{{ c.hex }};"
+            title="RGB({{ c.rgb[0] }},{{ c.rgb[1] }},{{ c.rgb[2] }})"></div>
+          <div class="mt-1">{{ c.percent }}%</div>
+          <div class="text-muted" style="font-size:0.7rem;">{{ c.hex }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Map (if coordinates exist) -->
+  {% if record.latitude and record.longitude %}
+  <div class="card aq-card mb-4">
+    <div class="card-header aq-card-header"><i class="bi bi-map me-2"></i>Location Map</div>
+    <div id="reportMap" style="height:300px; border-radius:0 0 .5rem .5rem;"></div>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to History
+    </a>
+    <a href="{{ url_for('index') }}" class="btn aq-btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>New Analysis
+    </a>
+    <button onclick="window.print()" class="btn btn-outline-secondary">
+      <i class="bi bi-printer me-1"></i>Print Report
+    </button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if record.latitude and record.longitude %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var lat = {{ record.latitude }};
+    var lng = {{ record.longitude }};
+    var risk = '{{ record.risk_level }}';
+    var colors = { Low: '#22c55e', Medium: '#f59e0b', High: '#ef4444' };
+    var map = L.map('reportMap').setView([lat, lng], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    var marker = L.circleMarker([lat, lng], {
+      radius: 12, color: colors[risk] || '#3b82d4',
+      fillColor: colors[risk] || '#3b82d4', fillOpacity: 0.8, weight: 2
+    }).addTo(map);
+    marker.bindPopup('<b>{{ record.location_name }}</b><br>Risk: <b>' + risk + '</b>').openPopup();
+  });
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% block title %}Satellite Water Pollution Explorer{% endblock %}
+
+{% block extra_head %}
+<style>
+  #satelliteMap { height: 420px; min-height: 300px; border-radius: 0 0 .5rem .5rem; }
+  .sat-step-badge {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--aq-blue); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700; flex-shrink: 0;
+  }
+  .sat-step-line { border-left: 2px dashed var(--aq-border); margin-left: 13px; min-height: 20px; }
+  .sat-link-card {
+    border: 1px solid var(--aq-border); border-radius: .5rem;
+    padding: .75rem 1rem; background: #f8fbff;
+    transition: box-shadow .15s, border-color .15s;
+    text-decoration: none; color: inherit;
+    display: block;
+  }
+  .sat-link-card:hover { border-color: var(--aq-teal); box-shadow: 0 2px 10px rgba(14,165,160,.15); }
+  .sat-auth-badge { font-size: .68rem; border-radius: 20px; }
+  .sat-region-pill {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .2rem .65rem; border-radius: 20px; font-size: .78rem;
+    font-weight: 600; background: #f1f5f9; border: 1px solid #e2e8f0;
+  }
+  .sat-region-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  #overlayImg { max-width: 100%; border-radius: .5rem; border: 1px solid var(--aq-border); }
+  .sat-score-ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.5rem; border: 5px solid;
+  }
+  .ring-low    { border-color: #22c55e; color: #166534; background: #dcfce7; }
+  .ring-medium { border-color: #f59e0b; color: #78350f; background: #fef3c7; }
+  .ring-high   { border-color: #ef4444; color: #7f1d1d; background: #fee2e2; }
+  .geocode-result-item { cursor: pointer; transition: background .1s; }
+  .geocode-result-item:hover { background: var(--aq-teal-light); }
+  .sat-history-item { border: 1px solid var(--aq-border); border-radius: .5rem; padding: .6rem .9rem; margin-bottom: .4rem; font-size: .85rem; transition: background .1s; }
+  .sat-history-item:hover { background: var(--aq-teal-light); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+
+  <!-- ========== Hero ========== -->
+  <div class="aq-hero-card mb-4" style="background: linear-gradient(135deg,#e8f4ff 0%,#d1faf5 60%,#e8f4ff 100%);">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-8">
+        <h1 class="display-6 fw-bold mb-2">
+          <i class="bi bi-satellite text-aq-teal me-3"></i>Satellite Water Pollution Explorer
+        </h1>
+        <p class="lead text-muted mb-3">
+          Search any river, lake, reservoir, or ocean. Pin a location on the map, choose
+          a date, upload or load an image, and get an AI-assisted visual pollution risk estimate
+          with annotated overlays highlighting suspicious areas.
+        </p>
+        <div class="alert alert-info border-0 small mb-0 aq-disclaimer-banner">
+          <i class="bi bi-info-circle-fill me-2"></i>
+          <strong>Important:</strong> This tool uses <strong>free satellite reference links</strong>
+          (Sentinel Hub, NASA Worldview, Copernicus) — no imagery is fetched automatically.
+          Upload your own image or use a demo sample to run the visual analysis. Results are
+          <strong>experimental visual estimates only</strong> and do not confirm chemical pollution.
+        </div>
+      </div>
+      <div class="col-lg-4 d-none d-lg-block text-center">
+        <div class="aq-hero-icon"><i class="bi bi-globe-americas"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- ========== LEFT PANEL: Search + Map + Form ========== -->
+    <div class="col-lg-5">
+
+      <!-- Step 1: Search Location -->
+      <div class="card aq-card mb-3">
+        <div class="card-header aq-card-header">
+          <span class="sat-step-badge me-2">1</span>
+          Search &amp; Pin Location
+        </div>
+        <div class="card-body">
+          <div class="input-group mb-2">
+            <input type="text" class="form-control" id="locationSearch"
+              placeholder="e.g. Ganges River, Lake Erie, Aral Sea…"
+              aria-label="Search location" />
+            <button class="btn aq-btn-primary" id="searchBtn" type="button">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div id="geocodeResults" class="list-group mb-2" style="max-height:180px;overflow-y:auto;"></div>
+
+          <div id="satelliteMap"></div>
+          <p class="small text-muted mt-1 mb-0">
+            <i class="bi bi-hand-index me-1"></i>
+            Click anywhere on the map to pin a custom location. Drag the marker to adjust.
+          </p>
+
+          <!-- Selected coordinates display -->
+          <div id="coordDisplay" class="mt-2 d-none">
+            <div class="d-flex gap-2 align-items-center small">
+              <i class="bi bi-geo-alt-fill text-aq-teal"></i>
+              <span id="coordText" class="text-muted"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Date + Type -->
+      <div class="card aq-card mb-3">
+        <div class="card-header aq-card-header">
+          <span class="sat-step-badge me-2">2</span>
+          Select Date &amp; Water Type
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Image / Observation Date</label>
+              <input type="date" class="form-control form-control-sm" id="imageDate"
+                max="" placeholder="YYYY-MM-DD" />
+              <div class="form-text">Used for satellite resource links</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold small">Water Body Type</label>
+              <select class="form-select form-select-sm" id="waterType">
+                <option value="ocean">Ocean / Sea</option>
+                <option value="river">River / Stream</option>
+                <option value="lake" selected>Lake / Pond</option>
+                <option value="reservoir">Reservoir</option>
+                <option value="wetland">Wetland</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Image Source -->
+      <div class="card aq-card mb-3">
+        <div class="card-header aq-card-header">
+          <span class="sat-step-badge me-2">3</span>
+          Provide Image for Analysis
+        </div>
+        <div class="card-body">
+          <ul class="nav nav-pills mb-3" id="imageSourceTab" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active aq-tab" data-bs-toggle="pill"
+                data-bs-target="#uploadImagePanel" type="button">
+                <i class="bi bi-upload me-1"></i>Upload
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link aq-tab" data-bs-toggle="pill"
+                data-bs-target="#demoImagePanel" type="button">
+                <i class="bi bi-play-circle me-1"></i>Demo Sample
+              </button>
+            </li>
+          </ul>
+          <div class="tab-content">
+
+            <!-- Upload Panel -->
+            <div class="tab-pane fade show active" id="uploadImagePanel">
+              <div class="aq-drop-zone" id="satDropZone">
+                <i class="bi bi-cloud-upload-fill fs-2 text-aq-teal"></i>
+                <p class="mb-1 mt-2 small">Drag &amp; drop or click to select</p>
+                <p class="text-muted" style="font-size:.75rem;">
+                  Any aerial, satellite, or drone image of a water body<br/>
+                  PNG, JPG, WEBP up to 16 MB
+                </p>
+                <input type="file" id="satImageInput" name="image"
+                  accept="image/*" class="d-none" />
+              </div>
+              <div id="satPreviewWrap" class="mt-2 d-none">
+                <img id="satImagePreview" src="" alt="Preview"
+                  class="img-fluid rounded border aq-preview-img" />
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
+                  id="satClearBtn"><i class="bi bi-x-circle me-1"></i>Clear</button>
+              </div>
+            </div>
+
+            <!-- Demo Panel -->
+            <div class="tab-pane fade" id="demoImagePanel">
+              <p class="text-muted small mb-2">Choose a built-in water sample to test the analysis.</p>
+              <div id="satSampleGrid" class="row g-2 mb-2">
+                <div class="col-12 text-center py-2">
+                  <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                </div>
+              </div>
+              <input type="hidden" id="satDemoKey" value="" />
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Analyse -->
+      <div class="card aq-card mb-3">
+        <div class="card-header aq-card-header">
+          <span class="sat-step-badge me-2">4</span>
+          Run Analysis
+        </div>
+        <div class="card-body">
+          <div id="satLocationNameWrap" class="mb-3">
+            <label class="form-label fw-semibold small">Location Name (auto-filled or edit)</label>
+            <input type="text" class="form-control" id="satLocationName"
+              placeholder="e.g. Lake Erie, USA" />
+          </div>
+          <button type="button" class="btn aq-btn-primary w-100 py-2" id="satAnalyzeBtn">
+            <i class="bi bi-cpu me-2"></i>Analyse Image
+          </button>
+          <div id="satProgress" class="mt-3 d-none">
+            <div class="progress aq-progress">
+              <div class="progress-bar progress-bar-striped progress-bar-animated aq-progress-bar"
+                style="width:100%"></div>
+            </div>
+            <p class="small text-muted text-center mt-1">
+              <i class="bi bi-cpu me-1"></i>Running visual analysis…
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== RIGHT PANEL: Results ========== -->
+    <div class="col-lg-7">
+
+      <!-- Placeholder -->
+      <div id="satResultsPlaceholder" class="card aq-card h-100 d-flex align-items-center justify-content-center"
+        style="min-height:400px;">
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-satellite fs-1 d-block mb-3 text-aq-teal opacity-40"></i>
+          <h5>Satellite analysis results will appear here</h5>
+          <p class="small">Complete the steps on the left to begin.</p>
+          <hr class="my-3" style="max-width:280px;margin:auto;" />
+          <div class="d-flex flex-wrap justify-content-center gap-2">
+            <span class="badge bg-light text-dark border"><i class="bi bi-satellite me-1"></i>Sentinel Hub</span>
+            <span class="badge bg-light text-dark border"><i class="bi bi-globe2 me-1"></i>NASA Worldview</span>
+            <span class="badge bg-light text-dark border"><i class="bi bi-layers me-1"></i>Copernicus</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Panel (hidden until analysis) -->
+      <div id="satResultsPanel" class="d-none">
+
+        <!-- Risk Summary -->
+        <div class="card aq-card mb-3">
+          <div class="card-body">
+            <div class="row align-items-center g-3">
+              <div class="col-auto">
+                <div id="satScoreRing" class="sat-score-ring ring-low">
+                  <span id="satScoreNum">0</span>
+                  <small style="font-size:.55rem;font-weight:500;">/ 100</small>
+                </div>
+              </div>
+              <div class="col">
+                <h5 class="fw-bold mb-1" id="satRiskLabel"></h5>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                  <span id="satLocationTag" class="badge" style="background:var(--aq-blue);"></span>
+                  <span id="satDateTag" class="badge bg-secondary"></span>
+                  <span id="satConfidenceBadge" class="badge aq-badge-confidence"></span>
+                </div>
+                <div class="mt-1">
+                  <small class="text-muted" id="satAnalyzedAt"></small>
+                </div>
+              </div>
+              <div class="col-auto d-none d-md-block">
+                <img id="satThumbImg" src="" alt="Analysed image"
+                  class="img-thumbnail" style="max-height:80px;max-width:100px;object-fit:cover;" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annotated Overlay + Detected Regions -->
+        <div class="card aq-card mb-3">
+          <div class="card-header aq-card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-layers me-2"></i>Annotated Image Overlay</span>
+            <button id="downloadOverlayBtn" class="btn btn-sm btn-outline-light">
+              <i class="bi bi-download me-1"></i>Download
+            </button>
+          </div>
+          <div class="card-body text-center">
+            <img id="overlayImg" src="" alt="Annotated overlay" />
+            <div id="detectedRegions" class="mt-2 d-flex flex-wrap gap-1 justify-content-center"></div>
+          </div>
+        </div>
+
+        <!-- Score Breakdown -->
+        <div class="card aq-card mb-3">
+          <div class="card-header aq-card-header">
+            <i class="bi bi-bar-chart-fill me-2"></i>Visual Risk Score Breakdown
+          </div>
+          <div class="card-body">
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Colour Anomaly</span><span id="satColorVal"></span>
+              </div>
+              <div class="progress aq-progress-sm">
+                <div class="progress-bar aq-bar-color" id="satColorBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Turbidity Proxy</span><span id="satTurbVal"></span>
+              </div>
+              <div class="progress aq-progress-sm">
+                <div class="progress-bar aq-bar-turbidity" id="satTurbBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Algae Bloom Indicators</span><span id="satAlgaeVal"></span>
+              </div>
+              <div class="progress aq-progress-sm">
+                <div class="progress-bar aq-bar-algae" id="satAlgaeBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div class="mb-0">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Dark Patch / Oil Indicator</span><span id="satDarkVal"></span>
+              </div>
+              <div class="progress aq-progress-sm">
+                <div class="progress-bar aq-bar-dark" id="satDarkBar" style="width:0%"></div>
+              </div>
+            </div>
+            <hr />
+            <div class="d-flex justify-content-between align-items-center">
+              <strong>Composite Visual Risk Score</strong>
+              <span class="fs-5 fw-bold" id="satCompositeScore"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Satellite Resource Links -->
+        <div class="card aq-card mb-3" id="satLinksCard">
+          <div class="card-header aq-card-header">
+            <i class="bi bi-satellite me-2"></i>Free Satellite Imagery Resources
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info small border-0 mb-3" style="background:rgba(14,165,160,.08);border-left:3px solid var(--aq-teal)!important;">
+              <i class="bi bi-info-circle me-1"></i>
+              <strong>No imagery was fetched automatically.</strong>
+              These links open external services in your browser where you can browse
+              real satellite imagery at your selected location. Some require a free account.
+            </div>
+            <div id="satLinksList" class="row g-2"></div>
+          </div>
+        </div>
+
+        <!-- Interpretation -->
+        <div class="card aq-card mb-3">
+          <div class="card-header aq-card-header">
+            <i class="bi bi-lightbulb me-2"></i>Interpretation &amp; Recommendations
+          </div>
+          <div class="card-body">
+            <p id="satExplanation" class="mb-3"></p>
+            <div id="satSourceNote" class="alert alert-secondary small border-0 mb-3"></div>
+            <h6 class="fw-bold">Recommendations</h6>
+            <ul id="satRecommendations" class="small mb-0"></ul>
+          </div>
+        </div>
+
+        <!-- Dominant Colours -->
+        <div class="card aq-card mb-3">
+          <div class="card-header aq-card-header">
+            <i class="bi bi-palette me-2"></i>Dominant Colours Detected
+          </div>
+          <div class="card-body">
+            <div id="satColorSwatches" class="d-flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="alert alert-warning aq-disclaimer-alert small mb-3">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span id="satDisclaimer"></span>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a id="satViewReportBtn" href="#" class="btn aq-btn-secondary">
+            <i class="bi bi-file-earmark-text me-1"></i>Full Report
+          </a>
+          <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print
+          </button>
+          <a href="{{ url_for('satellite') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-repeat me-1"></i>New Analysis
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========== Past Satellite Analyses ========== -->
+  <div class="card aq-card mt-4">
+    <div class="card-header aq-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-clock-history me-2"></i>Previous Satellite Analyses</span>
+      <button class="btn btn-sm btn-outline-light" id="refreshHistoryBtn">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover aq-table mb-0" id="satHistoryTable">
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Risk</th>
+              <th>Score</th>
+              <th>Date</th>
+              <th>Regions</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="satHistoryBody">
+            <tr><td colspan="7" class="text-center text-muted py-3">Loading history…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== How It Works ========== -->
+  <div class="card aq-card mt-4">
+    <div class="card-header aq-card-header">
+      <i class="bi bi-journal-code me-2"></i>How the Satellite Explorer Works
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="aq-method-card">
+            <div class="aq-method-icon"><i class="bi bi-search"></i></div>
+            <h6 class="fw-bold mt-2">1. Geocoding</h6>
+            <p class="small text-muted">
+              Uses <strong>OpenStreetMap Nominatim</strong> (free, no key) to resolve
+              place names to coordinates. Results are shown as map pins.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="aq-method-card">
+            <div class="aq-method-icon"><i class="bi bi-satellite"></i></div>
+            <h6 class="fw-bold mt-2">2. Satellite Links</h6>
+            <p class="small text-muted">
+              Deep-links to <strong>Sentinel Hub EO Browser</strong>,
+              <strong>NASA Earthdata Worldview</strong>, and
+              <strong>Copernicus Data Space</strong> are generated from your coordinates.
+              No imagery is downloaded automatically.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="aq-method-card">
+            <div class="aq-method-icon"><i class="bi bi-layers"></i></div>
+            <h6 class="fw-bold mt-2">3. Image Analysis</h6>
+            <p class="small text-muted">
+              Your uploaded image is analysed with <strong>OpenCV + NumPy</strong>.
+              Four pixel-level indicators (colour anomaly, turbidity, algae bloom,
+              dark patches) are scored 0–100 and combined into a composite risk score.
+            </p>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="aq-method-card">
+            <div class="aq-method-icon"><i class="bi bi-brush"></i></div>
+            <h6 class="fw-bold mt-2">4. Visual Overlay</h6>
+            <p class="small text-muted">
+              Detected suspicious regions are highlighted with colour-coded bounding
+              boxes and semi-transparent fills. A legend is embedded in the image.
+              Download the annotated image for offline reports.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="alert alert-warning small mt-3 mb-0">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>API &amp; Service Notes:</strong>
+        Nominatim geocoding is limited to ~1 request/second (OSM policy).
+        Sentinel Hub EO Browser and Copernicus Data Space require a <strong>free account</strong>
+        to view imagery. NASA Worldview requires no sign-in. Google Maps satellite view is
+        always accessible. <strong>None of these services' imagery is fetched or embedded here</strong> —
+        all links open in your browser. Visual analysis results are experimental estimates only
+        and never constitute proof of chemical pollution.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/satellite.js') }}"></script>
+{% endblock %}

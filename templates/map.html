@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Interactive Pollution Map{% endblock %}
+
+{% block extra_head %}
+<style>
+  #pollutionMap { height: 62vh; min-height: 380px; border-radius: 0 0 .5rem .5rem; cursor: crosshair; }
+  .aq-panel-scroll { max-height: 340px; overflow-y: auto; }
+  .aq-river-card {
+    border: 1px solid var(--aq-border);
+    border-radius: .55rem;
+    background: var(--aq-card-bg);
+    transition: box-shadow .18s, transform .14s;
+    cursor: pointer;
+  }
+  .aq-river-card:hover {
+    box-shadow: 0 4px 18px rgba(10,84,145,.13);
+    transform: translateY(-2px);
+  }
+  .aq-rank-badge {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; flex-shrink: 0;
+  }
+  .aq-rank-polluted { background: #fee2e2; color: #7f1d1d; }
+  .aq-rank-clean    { background: #dcfce7; color: #14532d; }
+  .aq-score-bar-wrap { height: 8px; border-radius: 4px; background: #e2e8f0; }
+  .aq-score-bar { height: 100%; border-radius: 4px; }
+  .aq-score-polluted { background: linear-gradient(90deg, #ef4444, #f97316); }
+  .aq-score-clean    { background: linear-gradient(90deg, #22c55e, #0ea5e9); }
+  .aq-click-panel {
+    border: 1.5px solid var(--aq-teal);
+    border-radius: .65rem;
+    background: var(--aq-card-bg);
+  }
+  .aq-overlay-img { width:100%; border-radius:.4rem; max-height:220px; object-fit:cover; }
+  .aq-disease-item {
+    border-left: 3px solid;
+    padding-left:.75rem;
+    margin-bottom:.7rem;
+  }
+  .aq-disease-high   { border-color: #ef4444; }
+  .aq-disease-medium { border-color: #f59e0b; }
+  .aq-disease-low    { border-color: #22c55e; }
+  .aq-wqi-pill {
+    display: inline-block;
+    font-size: .72rem; font-weight: 700;
+    padding: .15rem .6rem; border-radius: 20px;
+  }
+  .aq-wqi-extreme { background:#fee2e2; color:#7f1d1d; }
+  .aq-wqi-high    { background:#ffedd5; color:#7c2d12; }
+  .aq-wqi-medium  { background:#fef3c7; color:#78350f; }
+  .aq-wqi-good    { background:#dcfce7; color:#14532d; }
+  .aq-wqi-exc     { background:#d1fae5; color:#064e3b; }
+  #mapClickInfo { display:none; }
+  .aq-sample-notice {
+    background: #fffbeb; border: 1px solid #f59e0b;
+    border-radius: .4rem; font-size:.8rem; color:#78350f;
+    padding: .45rem .7rem;
+  }
+  .aq-source-chip {
+    display:inline-flex; align-items:center; gap:.3rem;
+    background: var(--aq-teal-light); border:1px solid var(--aq-teal);
+    border-radius:20px; font-size:.72rem; padding:.2rem .65rem; color:var(--aq-blue);
+    text-decoration:none; transition: background .15s;
+  }
+  .aq-source-chip:hover { background: var(--aq-teal-mid); color:#fff; }
+  .aq-tab-section { border-bottom: 2px solid var(--aq-border); }
+  .aq-tab-btn {
+    padding:.45rem 1.1rem; border:none; background:none;
+    font-weight:600; font-size:.88rem; color:var(--aq-muted);
+    border-bottom: 3px solid transparent; margin-bottom:-2px;
+    transition: color .15s, border-color .15s;
+  }
+  .aq-tab-btn.active { color:var(--aq-blue); border-bottom-color:var(--aq-blue); }
+  .aq-tab-pane { display:none; }
+  .aq-tab-pane.active { display:block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+
+  <!-- Page Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="bi bi-map text-aq-teal me-2"></i>Interactive Pollution Map</h2>
+      <p class="text-muted mb-0">Click any location on the map to analyse the water body. View ranking tables below.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn aq-btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>New Analysis
+    </a>
+  </div>
+
+  <!-- Legend + instructions -->
+  <div class="card aq-card mb-3">
+    <div class="card-body py-2">
+      <div class="d-flex flex-wrap gap-4 align-items-center">
+        <span class="small fw-bold">Risk Levels:</span>
+        <span class="d-flex align-items-center gap-1">
+          <span class="aq-map-legend aq-legend-low"></span><span class="small">Low</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <span class="aq-map-legend aq-legend-medium"></span><span class="small">Medium</span>
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <span class="aq-map-legend aq-legend-high"></span><span class="small">High</span>
+        </span>
+        <span class="d-flex align-items-center gap-2 ms-3">
+          <i class="bi bi-cursor text-aq-teal"></i>
+          <span class="small text-muted">Click any water body on the map to run an analysis</span>
+        </span>
+        <span class="text-muted small ms-auto" id="mapPointCount"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="card aq-card mb-3">
+    <div id="pollutionMap"></div>
+  </div>
+
+  <!-- Click Analysis Panel (hidden until map click) -->
+  <div id="mapClickInfo" class="aq-click-panel p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-crosshair2 text-aq-teal me-2"></i>
+        Water Body Analysis
+        <span class="badge bg-secondary ms-2 fw-normal small" id="clickLocationName">—</span>
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" id="closeClickPanel">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Loading state -->
+    <div id="clickAnalysisLoading" class="text-center py-4">
+      <div class="spinner-border text-aq-teal" role="status"></div>
+      <p class="text-muted mt-2 mb-0 small">Analysing water body…</p>
+    </div>
+
+    <!-- Result -->
+    <div id="clickAnalysisResult" style="display:none;">
+      <div class="aq-sample-notice mb-3" id="clickDisclaimer"></div>
+
+      <div class="row g-3">
+        <!-- Left: Image + overlay -->
+        <div class="col-md-4">
+          <p class="fw-semibold small mb-1">Representative Sample Image</p>
+          <img id="clickSampleImg" src="" alt="Water sample" class="aq-overlay-img mb-2" />
+          <p class="fw-semibold small mb-1">Pollution Overlay</p>
+          <img id="clickOverlayImg" src="" alt="Analysis overlay" class="aq-overlay-img" />
+        </div>
+
+        <!-- Right: Scores + info -->
+        <div class="col-md-8">
+          <!-- Risk summary -->
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <div id="clickRiskBadge" class="aq-risk-badge-lg"></div>
+            <div>
+              <div class="fw-bold" id="clickRiskLabel">—</div>
+              <div class="text-muted small">Pollution Risk Score:
+                <span class="fw-bold" id="clickRiskScore">—</span>/100
+              </div>
+              <div class="text-muted small">Confidence:
+                <span id="clickConfidence">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Score bars -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Colour Anomaly</span><span id="clickColorScore">—</span>
+            </div>
+            <div class="aq-score-bar-wrap"><div class="aq-score-bar aq-bar-color" id="clickColorBar"></div></div>
+            <div class="d-flex justify-content-between small mb-1 mt-2">
+              <span>Turbidity</span><span id="clickTurbScore">—</span>
+            </div>
+            <div class="aq-score-bar-wrap"><div class="aq-score-bar aq-bar-turbidity" id="clickTurbBar"></div></div>
+            <div class="d-flex justify-content-between small mb-1 mt-2">
+              <span>Algae / Bloom Indicators</span><span id="clickAlgaeScore">—</span>
+            </div>
+            <div class="aq-score-bar-wrap"><div class="aq-score-bar aq-bar-algae" id="clickAlgaeBar"></div></div>
+            <div class="d-flex justify-content-between small mb-1 mt-2">
+              <span>Dark Patch / Oil Indicators</span><span id="clickDarkScore">—</span>
+            </div>
+            <div class="aq-score-bar-wrap"><div class="aq-score-bar aq-bar-dark" id="clickDarkBar"></div></div>
+          </div>
+
+          <p class="small text-muted" id="clickExplanation"></p>
+        </div>
+      </div>
+
+      <!-- Tabs: Detected Regions / Diseases / Safety / Satellite Links -->
+      <div class="mt-3">
+        <div class="aq-tab-section d-flex gap-1 mb-3">
+          <button class="aq-tab-btn active" data-tab="tab-regions">
+            <i class="bi bi-bounding-box me-1"></i>Detected Regions
+          </button>
+          <button class="aq-tab-btn" data-tab="tab-diseases">
+            <i class="bi bi-heart-pulse me-1"></i>Health Risks
+          </button>
+          <button class="aq-tab-btn" data-tab="tab-safety">
+            <i class="bi bi-shield-check me-1"></i>Safety
+          </button>
+          <button class="aq-tab-btn" data-tab="tab-satlinks">
+            <i class="bi bi-satellite me-1"></i>Satellite Links
+          </button>
+        </div>
+
+        <div id="tab-regions" class="aq-tab-pane active">
+          <div id="clickRegionsContent" class="small text-muted">No suspicious regions detected.</div>
+        </div>
+        <div id="tab-diseases" class="aq-tab-pane">
+          <div id="clickDiseasesContent"></div>
+        </div>
+        <div id="tab-safety" class="aq-tab-pane">
+          <div id="clickSafetyContent"></div>
+        </div>
+        <div id="tab-satlinks" class="aq-tab-pane">
+          <div id="clickSatLinksContent"></div>
+        </div>
+      </div>
+    </div><!-- /clickAnalysisResult -->
+  </div><!-- /mapClickInfo -->
+
+  <!-- River Rankings Section -->
+  <div class="row g-4 mb-4">
+
+    <!-- Top 5 Most Polluted Rivers -->
+    <div class="col-lg-6">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          Top 5 Most Polluted Rivers
+          <span class="badge bg-danger ms-auto fw-normal small">Based on published data</span>
+        </div>
+        <div class="card-body p-0">
+          <div id="pollutedRiversList" class="p-3">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading…
+            </div>
+          </div>
+          <div class="px-3 pb-2">
+            <p class="text-muted small mb-0" id="pollutedDataNote"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top 5 Cleanest Rivers -->
+    <div class="col-lg-6">
+      <div class="card aq-card h-100">
+        <div class="card-header aq-card-header d-flex align-items-center gap-2"
+             style="background: linear-gradient(90deg, #14532d 0%, #15803d 60%, #0ea5a0 100%);">
+          <i class="bi bi-droplet-fill"></i>
+          Top 5 Cleanest Rivers
+          <span class="badge bg-success ms-auto fw-normal small">Based on published data</span>
+        </div>
+        <div class="card-body p-0">
+          <div id="cleanRiversList" class="p-3">
+            <div class="text-center text-muted py-3">
+              <div class="spinner-border spinner-border-sm me-2"></div>Loading…
+            </div>
+          </div>
+          <div class="px-3 pb-2">
+            <p class="text-muted small mb-0" id="cleanDataNote"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- River Detail Modal -->
+  <div class="modal fade" id="riverDetailModal" tabindex="-1" aria-labelledby="riverDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header" id="riverModalHeader">
+          <h5 class="modal-title fw-bold" id="riverDetailModalLabel">River Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="riverModalBody">
+          <!-- Filled by JS -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn aq-btn-primary btn-sm" id="riverGoToMapBtn">
+            <i class="bi bi-map me-1"></i>Go to Location on Map
+          </button>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="riverAnalyzeBtn">
+            <i class="bi bi-cpu me-1"></i>Analyse This River
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-muted small mt-2">
+    <i class="bi bi-info-circle me-1"></i>
+    User-submitted analyses with coordinates appear as coloured markers. Click anywhere on water to run an analysis.
+    River rankings are based on published reports — see individual sources for details.
+  </p>
+
+</div><!-- /container -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}
